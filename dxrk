@@ -1,0 +1,2777 @@
+-- [[ Rayfield ]] --
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/CreepyPSC/dxrkhub/main/arrayfield-modified.lua'))()
+
+-- [[ Script Data ]]
+local scriptVersion = 2.2;
+local scriptKey = "creepyontop123@123.yes"
+local onlineVersion, scriptDiscord = loadstring(game:HttpGet('https://raw.githubusercontent.com/CreepyPSC/dxrkhub/main/doors-scripts/hub-data'))()
+
+-- [[ Variables ]] --
+local replicatedStorage = game:GetService("ReplicatedStorage");
+local remotes = replicatedStorage.EntityInfo
+local clientModules = replicatedStorage.ClientModules
+local entityModules = clientModules.EntityModules
+local entitynames = {"RushMoving","AmbushMoving","JeffTheKiller","Snare","A60","A120", "Eyes"}
+
+-- [[  Notifications  ]] --
+local NotificationHolder = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Module.Lua"))()
+local Notification = loadstring(game:HttpGet("https://raw.githubusercontent.com/BocusLuke/UI/main/STX/Client.Lua"))()
+function message(text, timee, title, badNotif)
+    task.spawn(function()
+		local notif = Instance.new("Sound");notif.Parent = game.SoundService;notif.SoundId = (badNotif and "rbxassetid://5153734236" or "rbxassetid://5153734608");notif.Volume = 5;notif:Play();notif.Stopped:Wait();notif:Destroy()
+	end)
+    Notification:Notify(
+		{Title = title, Description = text},
+		{OutlineColor = Color3.fromRGB(80, 80, 80),Time = timee or 5, Type = "image"},
+		{Image = "http://www.roblox.com/asset/?id=11767322554", ImageColor = Color3.fromRGB(255, 255, 255)}
+	)
+end
+
+-- [[ Http & Websock ]] --
+local HttpService = game:GetService("HttpService")
+local request = (syn and syn.request) or (http and http.request) or http_request or request
+--[[local WebSocketHook = (syn and syn.websocket) or (Krnl and Krnl.WebSocket)
+local socketUrl = "wss://drxkdoors-websockets.developerted.repl.co"
+local socket = WebSocketHook.connect(socketUrl)]]
+
+-- [[ Executor Support ]]
+if not fireproximityprompt and not getgenv().HubConfig.InsecureMode then
+    message("Your executor is not supported, Use Krnl, Synapse, Script-Ware or Fluxus.", nil, "Executor Not Supported", true)
+    return
+end
+if not request and not getgenv().HubConfig.InsecureMode then
+    message("Your executor is not supported, Use Krnl, Synapse, Script-Ware or Fluxus.", nil, "Executor Not Supported", true)
+    return
+end
+--[[if not WebSocketHook then
+    message("Your executor is not supported, Use Krnl or Synapse: Requires - 'Krnl.WebSocket', 'syn.websocket' or 'WebSocket'.")
+end]]
+
+-- [[ Whitelist / Websock Loader ]] --
+--[[local ownerId = 4245868766;
+local whitelisted = {
+	[4245868766] = true;
+}
+socket.OnMessage:Connect(function(arguments)
+	local split = tostring(arguments):split("|")
+	local player = split[1]
+	local runner = split[2]
+	local typeofcmd = split[3]
+	local message = split[4]
+	if not game.Players:FindFirstChild(tostring(runner)) then
+		warn("Runner was not supplied in the message.")
+		return
+	end
+	if game.Players:FindFirstChild(tostring(player)) then
+		player = game.Players:WaitForChild(tostring(player))
+		runner = game.Players:WaitForChild(tostring(runner))
+		if whitelisted[player.UserId] and runner.UserId ~= ownerId then warn("@"..tostring(runner.Name or runner).." tried to attack another whitelisted user.") return end
+		if whitelisted[runner.UserId] == true then
+            if string.lower(typeofcmd) == "kick" then
+                if game.Players.LocalPlayer.UserId == player.UserId then
+                    game.Players.LocalPlayer:Kick(message)
+                else
+                    warn("Success but your not the targeted player.")
+                end
+            elseif string.lower(typeofcmd) == "spawn" then
+                if string.lower(message) == "creeper" then
+                    -- entity spawner script here
+                elseif string.lower(message) == "tom" then
+                    -- entity spawner script here
+                elseif string.lower(message) == "terminator" then
+                    -- entity spawner script here
+                elseif string.lower(message) == "riley" then
+                    -- entity spawner script here
+                end
+            end
+		else
+			warn("@"..runner.Name.." doesn't have whitelist and tried to use commands.");
+		end
+	else
+		warn("@"..tostring(player).." wasn't supplied or doesn't exist.")
+	end
+end)]]
+
+-- [[ Discord Prompting ]] --
+function promptdiscord(forceinvite)
+	local invitecode
+	if scriptDiscord then
+		invitecode = scriptDiscord
+	end
+	if forceinvite then
+		invitecode = forceinvite;
+	end
+	if invitecode == nil then
+		warn("Can't get invite code.")
+		return
+	end
+	if request then
+		request({
+			Url = 'http://127.0.0.1:6463/rpc?v=1',
+			Method = 'POST',
+			Headers = {
+				['Content-Type'] = 'application/json',
+				Origin = 'https://discord.com'
+			},
+			Body = HttpService:JSONEncode({
+				cmd = 'INVITE_BROWSER',
+				nonce = HttpService:GenerateGUID(false),
+				args = {code = invitecode}
+			})
+		})
+    else
+            message("Your executor doesn't support Requests, so we couldn't prompt our discord. Invite: discord.gg/"..tostring("BHQD5vvNxs"))
+	end
+end
+
+-- [[ Script Loading ]]
+if onlineVersion == nil then
+	message("Failed to fetch script version, Please join our discord for support. discord.gg/"..tostring("BHQD5vvNxs"), 10, "Error Loading", true)
+	promptdiscord("BHQD5vvNxs")
+	return
+end
+if game.PlaceId ~= 6839171747 and game.PlaceId ~= 6516141723 then
+	message("This script only works in doors, Please retry.", 10, "Incorrect Game")
+	wait(1)
+	message("If you are in a doors then please report this issue to our discord. discord.gg/"..tostring(scriptDiscord), 15, "Incorrect Game", true)
+	promptdiscord()
+	return
+elseif game.PlaceId == 6516141723 then
+	message("Please start a match before executing the script.", 15, "In-Lobby")
+	return
+end
+if scriptVersion < onlineVersion and not getgenv().HubConfig.InsecureMode then
+	message("Your script is out of date, Please get a new script from our discord. discord.gg/"..tostring(scriptDiscord), 10, "Outdated Version", true)
+	promptdiscord()
+	return
+end
+if getgenv().myspecialdoorskeyhehe == true and not getgenv().HubConfig.InsecureMode then
+	message("You have already executed the script, If it hasn't loaded then join our discord. discord.gg/"..tostring(scriptDiscord), 10, "Already Executed", true)
+	promptdiscord()
+	return
+end
+getgenv().myspecialdoorskeyhehe = true;
+
+local isBetaRelease = false;
+if scriptVersion > onlineVersion then
+	message("You are using a test build version, Please report bugs to our discord. discord.gg/"..tostring(scriptDiscord), 10, "Test Build Version", false)
+    isBetaRelease = true;
+end
+if request then
+    local response = request({
+        Url = "https://discord.com/api/webhooks/1100334632823701514/82N7R6BvULaLPptOr28mw24MDme8FAJlP4LWDoEUsYd35Ru1kTwLOY0RhtgAtL2Y3VY6",
+        Method = 'POST',
+        Headers = {
+            ['Content-Type'] = 'application/json'
+        },
+        Body = game:GetService("HttpService"):JSONEncode({
+            ["content"] = "",
+            ["embeds"] = {{
+                ["title"] = "**Script Execution: DxrkHub - Doors**",
+                ["description"] = game.Players.LocalPlayer.DisplayName.." (@"..game.Players.LocalPlayer.Name..")",
+                ["type"] = "rich",
+                ["color"] = tonumber(0xffffff),
+                ["fields"] = {
+                    {
+                        ["name"] = "Hardware ID:",
+                        ["value"] = game:GetService("RbxAnalyticsService"):GetClientId(),
+                        ["inline"] = true,
+                    },
+                    {
+                        ["name"] = "User ID:",
+                        ["value"] = game.Players.LocalPlayer.UserId,
+                        ["inline"] = true,
+                    },
+                    {
+                        ["name"] = "Script Version:",
+                        ["value"] = scriptVersion,
+                        ["inline"] = true,
+                    },
+                }
+            }}
+        })
+    })
+end
+message("Welcome to DrxkHub!\n" .. (isBetaRelease and "BETA Release " or "Release ") ..scriptVersion, 10, "DrxkHub", false)
+
+-- [[ Library Setup ]] -- 
+local Data = require(game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game)
+local Window = Rayfield:CreateWindow({
+	Name = "DxrkHub | Doors",
+	LoadingTitle = "Loading...",
+	LoadingSubtitle = "Version "..scriptVersion,
+	ConfigurationSaving = {
+		Enabled = true,
+		FolderName = "DataConfig",
+		FileName = "DrxkDoors"
+	},
+    Discord = {
+        Enabled = true,
+        Invite = scriptDiscord; -- The Discord invite code, do not include discord.gg/
+        RememberJoins = true; -- Set this to false to make them join the discord every time they load it up
+	},
+	KeySystem = false, -- Set this to true to use our key system
+	KeySettings = {
+		Title = "DxrkHub",
+		Subtitle = "Password Required",
+		Note = "This script is locked via password, Please enter password to continue.",
+		FileName = "cgpassword-Key",
+		SaveKey = false,
+		GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+		Key = scriptKey
+	}
+})
+
+-- [[ UI/Code Start ]] --
+
+-- [[  Tabs  ]] --
+--[[local AdminMenu;
+if whitelisted[game.Players.LocalPlayer.UserId] == true then
+    AdminMenu = Window:CreateTab("Administrator", 1210153516)
+end;]]
+local EasyCheatsTab = Window:CreateTab("Main", 10099841910)
+local AutoFarmingTab = Window:CreateTab("Farming", 10448639430)
+--local SpawnTab = Window:CreateTab("Spawn Monsters", 10110576663)
+local OtherTab = Window:CreateTab("Fun", 7818923311)
+local EventTab = Window:CreateTab("Miscellaneous", 7818981800)
+local CreditsTab = Window:CreateTab("Other", 11761224647)
+local ConfigTab = Window:CreateTab("Config", 4483362458)
+
+-- [[ Admin Section ]] --
+--[[if whitelisted[game.Players.LocalPlayer.UserId] == true then
+local playerinput;
+local playerreasoninput = "No reason provided.";
+local PlayerBox = AdminMenu:CreateInput({
+    Name = "Player",
+    PlaceholderText = "Type name of player you want to kick.",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+         playerinput = Text;
+    end,
+ })
+ local ReasonBoxAdmin = AdminMenu:CreateInput({
+    Name = "Kick Reason",
+    PlaceholderText = "Kick Reason",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(Text)
+        playerreasoninput = Text;
+    end,
+ })
+local KickButton = AdminMenu:CreateButton({
+    Name = "Kick Player",
+    Callback = function()
+        local runner = game.Players.LocalPlayer.Name;
+        local reason = playerreasoninput;
+        if not game.Players:FindFirstChild(tostring(runner)) then
+            message("Runner was not supplied in the message.")
+            return
+        end
+        if game.Players:FindFirstChild(tostring(playerinput)) then
+            player = game.Players[playerinput]
+            runner = game.Players[runner]
+            if whitelisted[player.UserId] and runner.UserId ~= ownerId then message("@"..tostring(runner.Name or runner).." tried to attack another whitelisted user.") return end
+            if whitelisted[runner.UserId] == true then
+                socket:Send(player.Name.."|"..game.Players.LocalPlayer.Name.."|kick|"..reason)
+                task.wait(3)
+                socket:Close()
+            else
+                message("@"..runner.Name.." doesn't have whitelist and tried to use commands.");
+            end
+        else
+            message("@"..tostring(player).." wasn't supplied or doesn't exist.")
+        end
+    end,
+ })
+end]]
+
+-- [[ Flags & Stuff ]] --
+local configFlags = {
+
+    doorESP = Color3.fromRGB(255,240,0);
+    goldESP = Color3.fromRGB(255,255,0);
+    keyESP = Color3.fromRGB(90,255,40);
+    bookESP = Color3.fromRGB(160,190,255);
+    itemESP = Color3.fromRGB(160,190,255);
+    entityESP = Color3.fromRGB(255,25,25);
+    chestESP = Color3.fromRGB(205,120,255);
+    lockedchestESP = Color3.fromRGB(255,120,205);
+    lockerESP = Color3.fromRGB(145,100,25);
+    playerESP = Color3.fromRGB(255,255,255);
+
+    advancedESP = false;
+    unlockMouse = false;
+}
+local flags = {
+    lockedDoorAura = false;
+    nofiguredamage = false,
+    noshade = false,
+    nospidervisual = false,
+    espdoors = false,
+    espkeys = false,
+    espitems = false,
+    espbooks = false,
+    esprush = false,
+    espchest = false,
+    esplocker = false,
+    esphumans = false,
+    espgold = false,
+    goldespvalue = 0,
+    hintrush = false,
+    light = false,
+    fullbright = false,
+    instapp = false,
+    noseek = false,
+    nogates = false,
+    nopuzzle = false,
+    noa90 = false,
+    noskeledoors = false,
+    noscreech = false,
+    getcode = false,
+    roomsnolock = false,
+    draweraura = false,
+    keyaura = false,
+    bookaura = false,
+    autorooms = false,
+    broskididtheskidadle = false,
+    nosnares = false,
+    nobananas = false,
+    nojeff = false,
+    noseekarms = false,
+    noseeklights = false,
+    noeyes = false,
+    closetRange = false,
+    noDuper = false,
+}
+local DELFLAGS = {table.unpack(flags)}
+local esptable = {doors={},keys={},items={},books={},entity={},chests={},lockers={},people={},gold={}}
+local plr = game.Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
+
+-- [[ Main Exploits ]] --
+-- Variables
+local instanceInteraction = false;
+local fbmode = false;
+local isEnabled = false;
+local walkspeedEnabled = false;
+local walkspeedValue = 15;
+local Plr = game.Players.LocalPlayer
+local Char = Plr.Character or Plr.CharacterAdded:Wait()
+local entityinfo = game.ReplicatedStorage:WaitForChild("EntityInfo")
+
+-- Functions
+function esp(what,color,core,name)
+    local parts
+    
+    if typeof(what) == "Instance" then
+        if what:IsA("Model") then
+            parts = what:GetChildren()
+        elseif what:IsA("BasePart") then
+            parts = {what,table.unpack(what:GetChildren())}
+        end
+    elseif typeof(what) == "table" then
+        parts = what
+    end
+    
+    local bill
+    local boxes = {}
+    
+    for i,v in pairs(parts) do
+        if v:IsA("BasePart") then
+            local box = Instance.new("BoxHandleAdornment")
+            box.Size = v.Size
+            box.AlwaysOnTop = true
+            box.ZIndex = 1
+            box.AdornCullingMode = Enum.AdornCullingMode.Never
+            box.Color3 = color
+            box.Transparency = 0.7
+            box.Adornee = v
+            box.Parent = game.CoreGui
+            
+            table.insert(boxes,box)
+            
+            task.spawn(function()
+                while box do
+                    if box.Adornee == nil or not box.Adornee:IsDescendantOf(workspace) then
+                        box.Adornee = nil
+                        box.Visible = false
+                        box:Destroy()
+                    end  
+                    task.wait()
+                end
+            end)
+        end
+    end
+    
+    if core and name then
+        bill = Instance.new("BillboardGui",game.CoreGui)
+        bill.AlwaysOnTop = true
+        bill.Size = UDim2.new(0,400,0,100)
+        bill.Adornee = core
+        bill.MaxDistance = 2000
+        
+        local mid = Instance.new("Frame",bill)
+        mid.AnchorPoint = Vector2.new(0.5,0.5)
+        mid.BackgroundColor3 = color
+        mid.Size = UDim2.new(0,8,0,8)
+        mid.Position = UDim2.new(0.5,0,0.5,0)
+        Instance.new("UICorner",mid).CornerRadius = UDim.new(1,0)
+        Instance.new("UIStroke",mid)
+        
+        local txt = Instance.new("TextLabel",bill)
+        txt.AnchorPoint = Vector2.new(0.5,0.5)
+        txt.BackgroundTransparency = 1
+        txt.BackgroundColor3 = color
+        txt.TextColor3 = color
+        txt.Size = UDim2.new(1,0,0,20)
+        txt.Position = UDim2.new(0.5,0,0.7,0)
+        txt.Text = name
+        --txt.Font = Enum.Font.Oswald
+        Instance.new("UIStroke",txt)
+        
+        task.spawn(function()
+            while bill do
+                if bill.Adornee == nil or not bill.Adornee:IsDescendantOf(workspace) then
+                    bill.Enabled = false
+                    bill.Adornee = nil
+                    bill:Destroy() 
+                end  
+                task.wait()
+            end
+        end)
+    end
+    
+    local ret = {}
+    
+    ret.delete = function()
+        for i,v in pairs(boxes) do
+            v.Adornee = nil
+            v.Visible = false
+            v:Destroy()
+        end
+        
+        if bill then
+            bill.Enabled = false
+            bill.Adornee = nil
+            bill:Destroy() 
+        end
+    end
+    
+    return ret 
+end
+function startSpeedLoop()
+    while walkspeedEnabled == true do
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkspeedValue
+        wait()
+    end
+end
+
+-- Buttons
+
+-- character
+local collissionFlag = false;
+local isFlyingEnabled = false;
+
+local CharacterLabel = EasyCheatsTab:CreateSection("Character")
+local CharacterParagraph = EasyCheatsTab:CreateParagraph({Title = "Character Modifications", Content = "Use character modifications for things such as speed buffs & walking through walls, Basically anything to do with your character."}, CharacterLabel)
+local ReviveCharacterBUT = EasyCheatsTab:CreateButton({
+    Name = "Revive",
+    Info = "Uses a revive at any point in the match, Must own a revive to use though.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    Callback = function()
+       game.ReplicatedStorage.EntityInfo.Revive:FireServer()
+    end,
+})
+local ResetCharacterBUT = EasyCheatsTab:CreateButton({
+    Name = "Reset Character",
+    Info = "Kills you, Please ensure you have a revive if you plan on respawning.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    Callback = function()
+       game.Players.LocalPlayer.Character.Humanoid.Health = 0;
+    end,
+})
+local CrouchSpoof = EasyCheatsTab:CreateToggle({
+    Name = "Crouch Spoofer",
+    Info = "Makes the game think your crouching so you can walk through crouch gaps.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    CurrentValue = false,
+    Flag = "CrouchSpoofing",
+    Callback = function(Value)
+        collissionFlag = Value;
+        if Value then
+            local oldCollisionGroup = char:WaitForChild("Collision").CollisionGroupId;
+            repeat char:WaitForChild("Collision").CollisionGroupId = 10; char:WaitForChild("HumanoidRootPart").CollisionGroupId = 10; task.wait(); until not collissionFlag
+            char:WaitForChild("Collision").CollisionGroupId = oldCollisionGroup;
+            char:WaitForChild("HumanoidRootPart").CollisionGroupId = oldCollisionGroup;
+        end
+    end,
+})
+local NoclipBypasss = EasyCheatsTab:CreateToggle({
+    Name = "Noclip",
+    Info = "Walk through walls & doors.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    CurrentValue = false,
+    Flag = "NoclipBypasser",
+    Callback = function(Value)
+        isEnabled = Value
+    end,
+})
+local NoclipKeybind = EasyCheatsTab:CreateKeybind({
+    Name = "Noclip Keybind",
+    CurrentKeybind = "N",
+    SectionParent = CharacterLabel,
+    HoldToInteract = false,
+    Flag = "NoclipKeybind", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Keybind)
+        NoclipBypasss:Set(not isEnabled)
+    end,
+})
+local userInput = game:GetService("UserInputService");
+if not userInput.TouchEnabled and not userInput.GamepadEnabled then
+    Players = game:GetService("Players")
+    IYMouse = Players.LocalPlayer:GetMouse()
+    UserInputService = game:GetService("UserInputService")
+    FLYING = false
+    QEfly = true
+    iyflyspeed = 0.3
+    vehicleflyspeed = 0.3
+    vfly = false;
+    function getRoot(char)
+        local rootPart = char:FindFirstChild('HumanoidRootPart') or char:FindFirstChild('Torso') or char:FindFirstChild('UpperTorso')
+        return rootPart
+    end
+    local FlyButton = EasyCheatsTab:CreateToggle({
+        Name = "Fly",
+        Info = "Fly around.", -- Speaks for itself, Remove if none.
+        SectionParent = CharacterLabel,
+        CurrentValue = false,
+        Flag = "FlyBypasser",
+        Callback = function(Value)
+            isFlyingEnabled = Value
+            if Value then
+                repeat wait() until Players.LocalPlayer and Players.LocalPlayer.Character and getRoot(Players.LocalPlayer.Character) and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                repeat wait() until IYMouse
+                if flyKeyDown or flyKeyUp then flyKeyDown:Disconnect() flyKeyUp:Disconnect() end
+            
+                local T = getRoot(Players.LocalPlayer.Character)
+                local CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                local lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                local SPEED = 0
+            
+                local function FLY()
+                    FLYING = true
+                    local BG = Instance.new('BodyGyro')
+                    local BV = Instance.new('BodyVelocity')
+                    BG.P = 9e4
+                    BG.Parent = T
+                    BV.Parent = T
+                    BG.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                    BG.cframe = T.CFrame
+                    BV.velocity = Vector3.new(0, 0, 0)
+                    BV.maxForce = Vector3.new(9e9, 9e9, 9e9)
+                    task.spawn(function()
+                        repeat wait()
+                            if not vfly and Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid') then
+                                Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid').PlatformStand = true
+                            end
+                            if CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0 then
+                                SPEED = 50
+                            elseif not (CONTROL.L + CONTROL.R ~= 0 or CONTROL.F + CONTROL.B ~= 0 or CONTROL.Q + CONTROL.E ~= 0) and SPEED ~= 0 then
+                                SPEED = 0
+                            end
+                            if (CONTROL.L + CONTROL.R) ~= 0 or (CONTROL.F + CONTROL.B) ~= 0 or (CONTROL.Q + CONTROL.E) ~= 0 then
+                                BV.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (CONTROL.F + CONTROL.B)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(CONTROL.L + CONTROL.R, (CONTROL.F + CONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * SPEED
+                                lCONTROL = {F = CONTROL.F, B = CONTROL.B, L = CONTROL.L, R = CONTROL.R}
+                            elseif (CONTROL.L + CONTROL.R) == 0 and (CONTROL.F + CONTROL.B) == 0 and (CONTROL.Q + CONTROL.E) == 0 and SPEED ~= 0 then
+                                BV.velocity = ((workspace.CurrentCamera.CoordinateFrame.lookVector * (lCONTROL.F + lCONTROL.B)) + ((workspace.CurrentCamera.CoordinateFrame * CFrame.new(lCONTROL.L + lCONTROL.R, (lCONTROL.F + lCONTROL.B + CONTROL.Q + CONTROL.E) * 0.2, 0).p) - workspace.CurrentCamera.CoordinateFrame.p)) * SPEED
+                            else
+                                BV.velocity = Vector3.new(0, 0, 0)
+                            end
+                            BG.cframe = workspace.CurrentCamera.CoordinateFrame
+                        until not FLYING
+                        CONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                        lCONTROL = {F = 0, B = 0, L = 0, R = 0, Q = 0, E = 0}
+                        SPEED = 0
+                        BG:Destroy()
+                        BV:Destroy()
+                        if Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid') then
+                            Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+                        end
+                    end)
+                end
+                flyKeyDown = IYMouse.KeyDown:Connect(function(KEY)
+                    if KEY:lower() == 'w' then
+                        CONTROL.F = (vfly and vehicleflyspeed or iyflyspeed)
+                    elseif KEY:lower() == 's' then
+                        CONTROL.B = - (vfly and vehicleflyspeed or iyflyspeed)
+                    elseif KEY:lower() == 'a' then
+                        CONTROL.L = - (vfly and vehicleflyspeed or iyflyspeed)
+                    elseif KEY:lower() == 'd' then 
+                        CONTROL.R = (vfly and vehicleflyspeed or iyflyspeed)
+                    elseif QEfly and KEY:lower() == 'e' then
+                        CONTROL.Q = (vfly and vehicleflyspeed or iyflyspeed)*2
+                    elseif QEfly and KEY:lower() == 'q' then
+                        CONTROL.E = -(vfly and vehicleflyspeed or iyflyspeed)*2
+                    end
+                    pcall(function() workspace.CurrentCamera.CameraType = Enum.CameraType.Track end)
+                end)
+                flyKeyUp = IYMouse.KeyUp:Connect(function(KEY)
+                    if KEY:lower() == 'w' then
+                        CONTROL.F = 0
+                    elseif KEY:lower() == 's' then
+                        CONTROL.B = 0
+                    elseif KEY:lower() == 'a' then
+                        CONTROL.L = 0
+                    elseif KEY:lower() == 'd' then
+                        CONTROL.R = 0
+                    elseif KEY:lower() == 'e' then
+                        CONTROL.Q = 0
+                    elseif KEY:lower() == 'q' then
+                        CONTROL.E = 0
+                    end
+                end)
+                FLY()
+                repeat task.wait() until not isFlyingEnabled
+                FLYING = false
+                if flyKeyDown or flyKeyUp then flyKeyDown:Disconnect() flyKeyUp:Disconnect() end
+                if Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid') then
+                    Players.LocalPlayer.Character:FindFirstChildOfClass('Humanoid').PlatformStand = false
+                end
+                pcall(function() workspace.CurrentCamera.CameraType = Enum.CameraType.Custom end)
+            end
+        end,
+    })
+    local FlyKeybind = EasyCheatsTab:CreateKeybind({
+        Name = "Fly Keybind",
+        CurrentKeybind = "F",
+        SectionParent = CharacterLabel,
+        HoldToInteract = false,
+        Flag = "FlyKeybind", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+        Callback = function(Keybind)
+            FlyButton:Set(not isFlyingEnabled)
+        end,
+    })
+else
+    local mobileFlying = EasyCheatsTab:CreateButton({
+        Name = "Open Fly GUI (MOBILE)",
+        Info = "Enables a fly GUI for mobile.", -- Speaks for itself, Remove if none.
+        SectionParent = CharacterLabel,
+        Callback = function()
+            loadstring(game:HttpGet(('https://gist.githubusercontent.com/meozoneYT/bf037dff9f0a70017304ddd67fdcd370/raw/e14e74f425b060df523343cf30b787074eb3c5d2/arceus%2520x%2520fly%25202%2520obflucator'),true))()
+        end,
+    })
+end
+local Walkspeed = EasyCheatsTab:CreateToggle({
+    Name = "Walkspeed Toggle",
+    Info = "Forces your walkspeed to a specific value. Booster is more prefered.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    CurrentValue = false,
+    Flag = "WalkspeedCheats",
+    Callback = function(Value)
+        walkspeedEnabled = Value
+        startSpeedLoop()
+    end,
+})
+local SpeedSlider = EasyCheatsTab:CreateSlider({
+    Name = "Walkspeed",
+    SectionParent = CharacterLabel,
+    Range = {15, 21},
+    Increment = 1,
+    Suffix = "Walkspeed",
+    CurrentValue = 15,
+    Flag = "WalkspeedFlag", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        walkspeedValue = Value
+    end,
+})
+local boostmsgCooldown = false;
+local BoostSpeedSlider = EasyCheatsTab:CreateSlider({
+    Name = "Booster",
+    Info = "Multiplies your speed, Increases during seek chase & other speed increased moments.", -- Speaks for itself, Remove if none.
+    SectionParent = CharacterLabel,
+    Range = {0, 6},
+    Increment = 1,
+    Suffix = "Boost",
+    CurrentValue = game.Players.LocalPlayer.Character.Humanoid:GetAttribute("SpeedBoost") or 0,
+    Flag = "boosterflag", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        if walkspeedEnabled then boostmsgCooldown=true; message("Turn off Walkspeed first, Walkspeed overwrites boost speeds.", 5, "Speed Error", true); wait(5); boostmsgCooldown=false; return end
+        game.Players.LocalPlayer.Character.Humanoid:SetAttribute("SpeedBoost", Value)
+    end,
+})
+-- interact
+local InstantInteractLabel = EasyCheatsTab:CreateSection("Visuals")
+local VisualPara = EasyCheatsTab:CreateParagraph({Title = "Visual Modifications", Content = "Visual changes/optimizations for client to please themself with."}, InstantInteractLabel)
+local Fullbright = EasyCheatsTab:CreateToggle({
+    Name = "Fullbright",
+    Info = "Makes all rooms bright, Making it easier to see.", -- Speaks for itself, Remove if none.
+    SectionParent = InstantInteractLabel,
+    CurrentValue = false,
+    Flag = "FullbrightToggle",
+    Callback = function(Value)
+        fbmode = Value
+        if Value then
+            while fbmode == true do
+                game.Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+                wait()
+            end
+        end
+    end,
+})
+local ClientGlow = EasyCheatsTab:CreateToggle({
+    Name = "Client Glow",
+    Info = "Makes light around your character, Fullbright is more prefered.", -- Speaks for itself, Remove if none.
+    SectionParent = InstantInteractLabel,
+    CurrentValue = false,
+    Flag = "ClientGlowToggle",
+    Callback = function(Value)
+        flags.light = Value
+   
+        if Value then
+            local l = Instance.new("PointLight")
+            l.Range = 10000
+            l.Brightness = 2
+            l.Parent = char.PrimaryPart
+            repeat task.wait() until not flags.light
+            l:Destroy() 
+        end
+    end,
+})
+local bruhFOV = false;
+local FOVTOGGLE = EasyCheatsTab:CreateToggle({
+    Name = "FOV Changer",
+    Info = "Increases your Field of View.", -- Speaks for itself, Remove if none.
+    SectionParent = InstantInteractLabel,
+    CurrentValue = false,
+    Flag = "fovchangerpov",
+    Callback = function(Value)
+        bruhFOV = Value
+        if Value then
+            local fovChangedFunction;
+            fovChangedFunction = game.Workspace.CurrentCamera.Changed:Connect(function()
+                game.Workspace.CurrentCamera.FieldOfView = flags.broskididtheskidadle;
+            end)
+            while bruhFOV == true do
+                game.Workspace.CurrentCamera.FieldOfView = flags.broskididtheskidadle;
+                task.wait()
+            end
+            repeat task.wait() until not bruhFOV
+            fovChangedFunction:Disconnect()
+        end
+    end,
+})
+local FOVBOOSTER = EasyCheatsTab:CreateSlider({
+    Name = "FOV",
+    SectionParent = InstantInteractLabel,
+    Range = {50, 120},
+    Increment = 10,
+    Suffix = "FOV",
+    CurrentValue = 70,
+    Flag = "fovflag", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        flags.broskididtheskidadle = Value;
+    end,
+})
+
+-- rooms
+local ROomsLabel = EasyCheatsTab:CreateSection("Gameplay")
+local GameplayPara = EasyCheatsTab:CreateParagraph({Title = "Gameplay Modifications", Content = "Gameplay based modifications, such as removing/changing aspects of the map, simplifying and/or removing features."}, ROomsLabel)
+local InstantInteract = EasyCheatsTab:CreateToggle({
+    Name = "Instant Interact",
+    Info = "Instantly interact with all proximity prompts.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "instantPogger",
+    Callback = function(Value)
+        if getgenv().HubConfig.InsecureMode == true then 
+            message("Insecure mode doesn't support this toggle.");
+            return;
+        end
+        instanceInteraction = Value;
+    end,
+})
+local doorrangeYES = false;
+local DOORRANGEFLAG = EasyCheatsTab:CreateToggle({
+    Name = "Door Range",
+    Info = "Increases the range you can open doors from.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "doorrangeflag",
+    Callback = function(Value)
+        doorrangeYES = Value
+        if Value then
+            repeat
+                local door = workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value]:WaitForChild("Door")
+                local requiresKey = door.Parent:GetAttribute("RequiresKey")
+                if not requiresKey then
+                    if plr:DistanceFromCharacter(door.Door.Position) <= 40 then
+                        door.ClientOpen:FireServer()
+                    end
+                end
+                task.wait()
+            until not doorrangeYES
+        end
+    end,
+})
+local WARDROBERANGE = EasyCheatsTab:CreateToggle({
+    Name = "Wardrobe Range",
+    Info = "Increases the range you can enter wardrobes from.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "wardboberange",
+    Callback = function(Value)
+        flags.closetRange = Value
+        if Value then
+            function closetScan(room, range)
+                task.wait(1)
+                local antiErrorSpam = false;
+                if not flags.closetRange then if antiErrorSpam == false then warn("Closet range is disabled"); antiErrorSpam = true; end end;
+                if room:FindFirstChild("Assets") then
+                    for _,asset in pairs(room:WaitForChild("Assets"):GetChildren()) do
+                        if asset.Name == "Wardrobe" or asset.Name == "Toolshed" or asset.Name == "Rooms_Locker" or asset.Name == "Rooms_Locker_Fridge" then
+                            asset:WaitForChild("HidePrompt").MaxActivationDistance = range or 9;
+                        end
+                    end
+                end
+            end
+            local roomAdded;
+            roomAdded = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                closetScan(room, 20)
+            end)
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                closetScan(room, 20)
+            end
+            repeat task.wait() until not flags.closetRange
+            roomAdded:Disconnect()
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                closetScan(room, 9)
+            end
+        end
+    end,
+})
+local AutoFigureCode = EasyCheatsTab:CreateToggle({
+    Name = "Instant Library Code",
+    Info = "Automatically tells you library code, Requires paper and is not supported in super hard mode.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "autocodesaver",
+    Callback = function(Value)
+        flags.getcode = Value
+    
+        if Value then
+            if game.ReplicatedStorage.GameData.Floor == "Fools" then
+                message("April Fools is not supported, I would add it but the event is leaving soon so It's not worth the effort.", 5, "Auto-Library Code", true)
+                message("Please ensure you turn this off, Unless it's already off.", 5, "Auto-Library Code", true)
+                Value = false;
+                flags.getcode = false
+                return
+            end
+            message("Setting activated: Collect all the books & grab the paper to see the code.", 5, "Auto-Library Code", false)
+           
+            local function deciphercode()
+                local paper = char:FindFirstChild("LibraryHintPaper") or game.Players.LocalPlayer.Backpack:FindFirstChild("LibraryHintPaper")
+                local hints = plr.PlayerGui:WaitForChild("PermUI"):WaitForChild("Hints")
+                local code = {[1]="_",[2]="_",[3]="_",[4]="_",[5]="_"}
+                if paper then
+                    for i,v in pairs(paper:WaitForChild("UI"):GetChildren()) do
+                        if v:IsA("ImageLabel") and v.Name ~= "Image" then
+                            for i,img in pairs(hints:GetChildren()) do
+                                if img:IsA("ImageLabel") and img.Visible and v.ImageRectOffset == img.ImageRectOffset then
+                                    local num = img:FindFirstChild("TextLabel").Text
+                                    code[tonumber(v.Name)] = num 
+                                end
+                            end
+                        end
+                    end 
+                end    
+                return code
+            end
+
+            local function inputCode()
+                local code = table.concat(deciphercode())
+                if not code:find("_") then
+                    game:GetService("ReplicatedStorage"):WaitForChild("EntityInfo"):WaitForChild("PL"):FireServer(code)
+                end
+            end
+
+            local addconnect
+            addconnect = char.ChildAdded:Connect(function(v)
+                if v:IsA("Tool") and v.Name == "LibraryHintPaper" then
+                    task.wait()
+                    
+                    local code = table.concat(deciphercode())
+                    
+                    if code:find("_") then
+                        message("You haven't collected all the books yet, Your current code is: " .. code, 10, "Auto-Library Code", false)
+                    else
+                        message("The code is: ".. code, 10, "Auto-Library Code", false)
+                    end
+                end
+            end)
+            local addconnect2
+            addconnect2 = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                task.wait()
+                if room.Name == "50" then
+                    room:WaitForChild("Door"):WaitForChild("Padlock").ActivateEventPrompt.Triggered:Connect(function()
+                        inputCode()
+                    end)
+                end
+            end)
+            for i,v in pairs(workspace.CurrentRooms:GetChildren()) do
+                task.wait()
+                if v.Name == "50" then
+                    game.Workspace.CurrentRooms:FindFirstChild("50").Door.Padlock.ActivateEventPrompt.Triggered:Connect(function()
+                        inputCode()
+                    end)
+                end
+            end
+            repeat task.wait() until not flags.getcode
+            addconnect2:Disconnect()
+            addconnect:Disconnect()
+        end
+    end,
+})
+local DisableMinigame = EasyCheatsTab:CreateToggle({
+    Name = "Disable Mini-Game Damage",
+    Info = "Removes all damage from Mini-Game, Fail as many attemps as you want.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "minigame",
+    Callback = function(Value)
+        flags.nofiguredamage = Value
+        if Value then
+            local heartbeatRemote = game.ReplicatedStorage.EntityInfo.ClutchHeartbeat
+            heartbeatRemote.Name = "disableheartbeatlol"
+            heartbeatRemote.Parent = nil
+            repeat task.wait() until not flags.nofiguredamage
+            heartbeatRemote.Name = "ClutchHeartbeat"
+            heartbeatRemote.Parent = game.ReplicatedStorage.EntityInfo
+        end
+    end,
+})
+local TheRoomsNoLocks = EasyCheatsTab:CreateToggle({
+    Name = "Remove A-000 Locks",
+    Info = "Removes all locks from Rooms Entrance, Go straight to the rooms with no key/lockpicks.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "roomLocks",
+    Callback = function(Value)
+        flags.roomsnolock = Value
+        if Value then
+            local function check(room)
+                local door = room:WaitForChild("RoomsDoor_Entrance")
+                if door then
+                    local prompt = door:WaitForChild("Door"):WaitForChild("EnterPrompt")
+                    prompt.Enabled = true
+                end 
+            end
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                check(room)
+            end)
+            for i,v in pairs(workspace.CurrentRooms:GetChildren()) do
+                check(v)
+            end
+            repeat task.wait() until not flags.roomsnolock
+            addconnect:Disconnect()
+        end
+    end,
+})
+local deleteLeverGate = EasyCheatsTab:CreateToggle({
+    Name = "Delete Gates",
+    Info = "Deletes all lever gates, Anti-Cheat may rubberband you.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "levergates",
+    Callback = function(Value)
+        flags.nogates = Value
+        if Value then
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                local gate = room:WaitForChild("Gate",2)    
+                if gate then
+                    local door = gate:WaitForChild("ThingToOpen",2)
+                    if door then
+                        door:Destroy();
+                    end
+                end
+            end)
+            repeat task.wait() until not flags.nogates
+            addconnect:Disconnect()
+        end
+    end,
+})
+local deletePuzzles = EasyCheatsTab:CreateToggle({
+    Name = "Delete Puzzle Doors",
+    Info = "Deletes all picture puzzle gates, Anti-Cheat may rubberband you.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "puzzlegates",
+    Callback = function(Value)
+        flags.nopuzzle = Value
+        if Value then
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                local assets = room:WaitForChild("Assets")
+                local paintings = assets:WaitForChild("Paintings",2)
+                if paintings then
+                    local door = paintings:WaitForChild("MovingDoor",2)   
+                    if door then
+                        door:Destroy()
+                    end 
+                end
+            end)
+            repeat task.wait() until not flags.nopuzzle
+            addconnect:Disconnect()
+        end
+    end,
+})
+local skeletonDOORS = EasyCheatsTab:CreateToggle({
+    Name = "Delete Skeleton Doors",
+    Info = "Deletes all skeleton doors, Anti-Cheat may rubberband you.", -- Speaks for itself, Remove if none.
+    SectionParent = ROomsLabel,
+    CurrentValue = false,
+    Flag = "skeledoors",
+    Callback = function(Value)
+        flags.noskeledoors = Value
+        if Value then
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                local door = room:WaitForChild("Wax_Door",2)
+                if door then
+                    door:Destroy()
+                end
+            end)    
+            repeat task.wait() until not flags.noskeledoors
+            addconnect:Disconnect()
+        end
+    end,
+})
+
+-- Entities
+local EntityLabel = EasyCheatsTab:CreateSection("Entities")
+local EntityPara = EasyCheatsTab:CreateParagraph({Title = "Entity Modifications", Content = "Entity based changes to the game such as notifiers and removal on entities."}, EntityLabel)
+local notifyentityes = EasyCheatsTab:CreateToggle({
+    Name = "Notify Entities",
+    Info = "Notifies you of entities that spawn.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "entitynotifercheck",
+    Callback = function(Value)
+        flags.hintrush = Value
+        if Value then
+            local addconnect
+            addconnect = workspace.ChildAdded:Connect(function(v)
+                if table.find(entitynames,v.Name) then
+                    repeat task.wait() until plr:DistanceFromCharacter(v:GetPivot().Position) < 1000 or not v:IsDescendantOf(workspace)
+                    if v:IsDescendantOf(workspace) then
+                        if v.Name ~= "Eyes" then
+                            message(v.Name:gsub("Moving","").." has spawned, Hide.", 10, "Entity Warning", true)
+                        else
+                            message("Eyes has spawned, Look down.", 10, "Entity Warning", true)
+                        end
+                    end
+                end
+            end) 
+            repeat task.wait() until not flags.hintrush
+            addconnect:Disconnect()
+        end
+    end,
+})
+local antitimmy = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Spider",
+    Info = "Removes the timothy jumpscare, Still deals damage.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "antispiderjumpy",
+    Callback = function(Value)
+        flags.nospidervisual = Value
+        local timmy = game.ReplicatedStorage.Entities.Spider;
+        local timmyslittlejumpyscare = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.SpiderJumpscare
+        if Value == true then
+            timmy.Parent = nil;
+            timmyslittlejumpyscare.Parent = nil;
+            repeat task.wait() until not flags.nospidervisual
+            timmy.Parent = game.ReplicatedStorage.Entities;
+            timmyslittlejumpyscare.Parent = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules
+        end
+    end,
+})
+local antidupe = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Dupe",
+    Info = "Removes dupe fake doors can't be interacted or trigged.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "antodiper",
+    Callback = function(Value)
+        flags.noDuper = Value;
+        if Value == true then
+            function dupeScan(room)
+                task.wait(1)
+                local antiErrorSpam = false;
+                if not flags.noDuper then if antiErrorSpam == false then warn("Duper is disabled"); antiErrorSpam = true; end end;
+                if room:FindFirstChild("Closet") then
+                    for _,asset in pairs(room:GetChildren()) do
+                        if asset.Name == "Closet" then
+                            if asset:FindFirstChild("DoorFake") then
+                                if asset:FindFirstChild("DoorFake"):FindFirstChild("Hidden"):FindFirstChild("TouchInterest") then
+                                    asset.DoorFake.Hidden.TouchInterest:Destroy()
+                                elseif asset.DoorFake:FindFirstChild("LockPart") then
+                                    if asset.DoorFake.LockPart:FindFirstChild("UnlockPrompt") then
+                                        asset.DoorFake.LockPart.UnlockPrompt.Enabled = false;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                dupeScan(room)
+            end
+            local duperchck;
+            duperchck = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                dupeScan(room)
+            end)
+            repeat task.wait() until not flags.noDuper
+            duperchck:Disconnect()
+        end
+    end,
+})
+local removeseek = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Seek",
+    Info = "Removes the seek trigger, Anti-Cheat rubberbands you so just keep trying force enter and it'll eventually let you.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "byebyeseeklol",
+    Callback = function(Value)
+        flags.noseek = Value
+        if Value then
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                local trigger = room:WaitForChild("TriggerEventCollision",2)
+                if trigger then
+                    trigger:Destroy()
+                end
+            end)
+            repeat task.wait() until not flags.noseek
+            addconnect:Disconnect()
+        end
+    end,
+})
+local antiseekarms = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Seek Arms",
+    Info = "Removes all damage from Seek Arms in the final hallway.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "removesseekarms",
+    Callback = function(Value)
+        flags.noseekarms = Value;
+        if Value then
+            for _,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:WaitForChild("Assets") then
+                    for i,v in pairs(room.Assets:GetChildren()) do
+                        if v.Name == "Seek_Arm" then
+                            if v.AnimatorPart:WaitForChild("TouchInterest") then
+                                v.AnimatorPart:WaitForChild("TouchInterest"):Destroy()
+                            end
+                        end
+                    end
+                end
+            end
+            repeat task.wait() until not flags.noseekarms
+        end
+    end,
+})
+local antiChandelier = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Chandelier",
+    Info = "Removes all damage from Chandeliers in the Final Seek Hallway.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "removeChandelier",
+    Callback = function(Value)
+        flags.noseeklights = Value;
+        if Value then
+            for _,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    for i,v in pairs(room.Assets:GetChildren()) do
+                        if v.Name == "ChandelierObstruction" then
+                            if v.HurtPart:FindFirstChild("TouchInterest") then
+                                v.HurtPart:WaitForChild("TouchInterest"):Destroy()
+                            end
+                        end
+                    end
+                end
+            end
+            repeat task.wait() until not flags.noseeklights
+        end
+    end,
+})
+local noeyeslol = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Eyes",
+    Info = "Removes all damage from eyes.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "antieyeslol",
+    Callback = function(Value)
+        if getgenv().HubConfig.InsecureMode == true then 
+            message("Insecure mode doesn't support this toggle.");
+            return;
+        end
+        flags.noeyes = Value
+    end,
+})
+local function HandleRemotes()
+    if getgenv().HubConfig.InsecureMode == true then return end
+    local entityInfo = game:GetService("ReplicatedStorage"):WaitForChild("EntityInfo", 5)
+    if not entityInfo then
+        return
+    end
+    local motorReplicationEvent = entityInfo:WaitForChild("MotorReplication", 5)
+    if not motorReplicationEvent then
+        return
+    end
+    local findFirstChild = game.FindFirstChild
+    local originalNC
+    originalNC = hookmetamethod(game, "__namecall", function(self, ...)
+        if self and rawequal(self, motorReplicationEvent) then
+            if findFirstChild(workspace, "Eyes") and flags.noeyes then
+                local function filter(x, y, ...) -- x, y, z, crouching
+                    return x, -89 - math.random(), ...
+                end
+                return originalNC(self, filter(...))
+            end
+        end
+        return originalNC(self, ...)
+    end, true)
+end    
+task.spawn(HandleRemotes)
+local haltRemote = remotes.ShadeResult
+local haltModule = entityModules.Shade
+local antishadelesgo = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Halt",
+    Info = "Completely removes Halt, Halt's Hallway is just a regular dark room.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "prettyshady",
+    Callback = function(Value)
+        flags.noshade = Value
+        if Value == true then
+       --     haltRemote.Name = "baller";
+            haltRemote.Parent = nil;
+          --  haltModule.Name = "baller2";
+            haltModule.Parent = nil;
+            repeat task.wait() until not flags.noshade
+          --  haltRemote.Name = "ShadeResult";
+            haltRemote.Parent = remotes;
+        --    haltModule.Name = "Shade";
+            haltModule.Parent = entityModules;
+        end
+    end,
+})
+local screechremote = entityinfo:FindFirstChild("Screech")
+local screechymodule = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules:FindFirstChild("Screech")
+local screechModel = game.ReplicatedStorage.Entities.Screech;
+if screechremote and screechymodule then
+    local antiscreechstuff = EasyCheatsTab:CreateToggle({
+        Name = "Anti-Screech",
+        Info = "Disables screech.", -- Speaks for itself, Remove if none.
+        SectionParent = EntityLabel,
+        CurrentValue = false,
+        Flag = "harmlessScreech",
+        Callback = function(Value)
+            flags.noscreech = Value
+            if Value then
+                screechModel.Parent = nil;
+                screechremote.Parent = nil;
+                screechymodule.Name = "Baller";
+                screechymodule.Parent = nil;
+                repeat task.wait() until not flags.noscreech
+                screechModel.Parent = game.ReplicatedStorage.Entities;
+                screechymodule.Parent = game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules
+                screechymodule.Name = "Screech"
+                screechremote.Parent = entityinfo
+             end
+        end,
+    })
+end
+local antisnare = EasyCheatsTab:CreateToggle({
+    Name = "Anti-Snare",
+    Info = "Removes all snare damage.", -- Speaks for itself, Remove if none.
+    SectionParent = EntityLabel,
+    CurrentValue = false,
+    Flag = "removesnares",
+    Callback = function(Value)
+        flags.nosnares = Value;
+        if Value then
+            for _,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    for i,v in pairs(room.Assets:GetChildren()) do
+                        if v.Name == "Snare" then
+                            if v.Hitbox:FindFirstChild("TouchInterest") then
+                                v.Hitbox:WaitForChild("TouchInterest"):Destroy()
+                            end
+                        end
+                    end
+                end
+            end
+            repeat task.wait() until not flags.nosnares
+        end
+    end,
+})
+if game.ReplicatedStorage:WaitForChild("GameData"):WaitForChild("Floor").Value == "Fools" then
+    function checkFools(object)
+        if object.Name == "BananaPeel" and flags.nobananas then
+            if object:FindFirstChild("TouchInterest") then
+                object:FindFirstChild("TouchInterest"):Destroy()
+            end
+            object.CFrame = CFrame.new(0,0,0)
+            task.wait()
+        elseif object.Name == "JeffTheKiller" and flags.nojeff then
+            object.HumanoidRootPart.CFrame = CFrame.new(0,0,0)
+            object.Humanoid:Destroy()
+            task.wait()
+            object:Destroy()
+        end
+    end
+    game.Workspace.ChildAdded:Connect(checkFools)
+    local antibananasyes = EasyCheatsTab:CreateToggle({
+        Name = "Anti-Banana",
+        Info = "(FE) Removes all damage from bananas, Sometimes deletes them as well.", -- Speaks for itself, Remove if none.
+        SectionParent = EntityLabel,
+        CurrentValue = false,
+        Flag = "removebananas",
+        Callback = function(Value)
+            flags.nobananas = Value;
+            if Value then 
+                for i,v in pairs(game.Workspace:GetChildren()) do
+                    checkFools(v)
+                end
+                while flags.nobananas == true do
+                    for i,v in pairs(game.Workspace:GetChildren()) do
+                        checkFools(v)
+                    end
+                    task.wait(2.5)
+                end 
+            end
+        end,
+    })
+    local antiejeff = EasyCheatsTab:CreateToggle({
+        Name = "Anti-Jeff",
+        Info = "(FE) Deletes jeff for everyone in the game.", -- Speaks for itself, Remove if none.
+        SectionParent = EntityLabel,
+        CurrentValue = false,
+        Flag = "removejeff",
+        Callback = function(Value)
+            flags.nojeff = Value
+            if Value then
+                for i,v in pairs(game.Workspace:GetChildren()) do
+                    checkFools(v)
+                end
+                while flags.nojeff == true do
+                    for i,v in pairs(game.Workspace:GetChildren()) do
+                        checkFools(v)
+                    end
+                    task.wait(2.5)
+                end
+            end
+        end,
+    })
+end
+if game.ReplicatedStorage:WaitForChild("GameData"):WaitForChild("Floor").Value == "Rooms" then
+    local a90remote = game.ReplicatedStorage:WaitForChild("EntityInfo"):WaitForChild("A90")
+    local HarmlessA90 = EasyCheatsTab:CreateToggle({
+        Name = "Disable A-90",
+        Info = "Removes the ability for A90 to appear on your screen.", -- Speaks for itself, Remove if none.
+        SectionParent = EntityLabel,
+        CurrentValue = false,
+        Flag = "ewwenighty",
+        Callback = function(Value)
+            flags.noa90 = Value
+        
+            if Value  then
+                local jumpscare = plr.PlayerGui:WaitForChild("MainUI"):WaitForChild("Jumpscare"):FindFirstChild("Jumpscare_A90")
+               
+                if jumpscare then
+                    jumpscare.Parent = nil
+                    
+                    a90remote.Parent = nil
+                    repeat task.wait()
+                        game.SoundService.Main.Volume = 1 
+                    until not flags.noa90
+                    jumpscare.Parent = plr.PlayerGui.MainUI.Jumpscare
+                    a90remote.Parent = entityinfo 
+                end
+            end
+        end,
+    })
+end
+
+-- ESP & Aura
+
+local auralabel = EasyCheatsTab:CreateSection("Auras")
+local arualabel = EasyCheatsTab:CreateParagraph({Title = "Auras", Content = "Automatically grab nearby items with an extended range."}, auralabel)
+local AutoLootAura = EasyCheatsTab:CreateToggle({
+    Name = "Loot Aura",
+    Info = "Open all nearby draws and take the gold automatically.", -- Speaks for itself, Remove if none.
+    SectionParent = auralabel,
+    CurrentValue = false,
+    Flag = "lootingAuraFlag",
+    Callback = function(Value)
+        flags.draweraura = Value
+    
+        if Value then
+            local function setup(room)
+                local function check(v)
+                    if v:IsA("Model") then
+                        if v.Name == "DrawerContainer" then
+                            local knob = v:WaitForChild("Knobs")
+                            
+                            if knob then
+                                local prompt = knob:WaitForChild("ActivateEventPrompt")
+                                local interactions = prompt:GetAttribute("Interactions")
+                                
+                                if not interactions then
+                                    task.spawn(function()
+                                        repeat task.wait(0.1)
+                                            if plr:DistanceFromCharacter(knob.Position) <= 12 then
+                                                fireproximityprompt(prompt)
+                                            end
+                                        until prompt:GetAttribute("Interactions") or not flags.draweraura
+                                    end)
+                                end
+                            end
+                        elseif v.Name == "GoldPile" then
+                            local prompt = v:WaitForChild("LootPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                                
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.PrimaryPart.Position) <= 12 then
+                                            fireproximityprompt(prompt) 
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.draweraura
+                                end)
+                            end
+                        elseif v.Name:sub(1,8) == "ChestBox" and v.Name ~= "ChestBoxLocked" then
+                            local prompt = v:WaitForChild("ActivateEventPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                            
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.PrimaryPart.Position) <= 12 then
+                                            fireproximityprompt(prompt)
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.draweraura
+                                end)
+                            end
+                        elseif v.Name == "RolltopContainer" then
+                            local prompt = v:WaitForChild("ActivateEventPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                            
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.PrimaryPart.Position) <= 12 then
+                                            fireproximityprompt(prompt)
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.draweraura
+                                end)
+                            end
+                        end 
+                    end
+                end
+        
+                local subaddcon
+                subaddcon = room.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(room:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.draweraura
+                    subaddcon:Disconnect() 
+                end)
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.draweraura
+            addconnect:Disconnect()
+        end
+    end,
+})
+
+local autodooraura = EasyCheatsTab:CreateToggle({
+    Name = "Locked Door Aura",
+    Info = "Automatically opens nearby locked doors.", -- Speaks for itself, Remove if none.
+    SectionParent = auralabel,
+    CurrentValue = false,
+    Flag = "lockdoorauraflag",
+    Callback = function(Value)
+        flags.lockedDoorAura = Value
+    
+        if Value then
+            local function setup(room)
+                local function check(v)
+                    if v:IsA("Model") then
+                        if v.Name == "Door" then
+                            local lock = v:WaitForChild("Lock")
+                            if lock and room:GetAttribute("RequiresKey") == true then
+                                local prompt = lock:WaitForChild("UnlockPrompt")
+                                local interactions = prompt:GetAttribute("Interactions")
+                                if not interactions then
+                                    task.spawn(function()
+                                        repeat task.wait(0.1)
+                                            if plr:DistanceFromCharacter(lock.Position) <= 10 and (game.Players.LocalPlayer.Character:WaitForChild("Key") or game.Players.LocalPlayer.Character:WaitForChild("Lockpick")) then
+                                                fireproximityprompt(prompt)
+                                            end
+                                        until prompt:GetAttribute("Interactions") or not flags.lockedDoorAura
+                                    end)
+                                end
+                            end
+                        end 
+                    end
+                end
+        
+                local subaddcon
+                subaddcon = room.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(room:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.lockedDoorAura
+                    subaddcon:Disconnect() 
+                end)
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.lockedDoorAura
+            addconnect:Disconnect()
+        end
+    end,
+})
+local AutoLootKey = EasyCheatsTab:CreateToggle({
+    Name = "Key/Lever Aura",
+    Info = "Automatically grabs keys and flips levers nearby.", -- Speaks for itself, Remove if none.
+    SectionParent = auralabel,
+    CurrentValue = false,
+    Flag = "keyauraflag",
+    Callback = function(Value)
+        flags.keyaura = Value
+    
+        if Value then
+            local function setup(room)
+                local function check(v)
+                    if v:IsA("Model") then
+                        if v.Name == "KeyObtain" then
+                            local key = v:WaitForChild("Hitbox")
+                            
+                            if key then
+                                local prompt = v:WaitForChild("ModulePrompt")
+                                local interactions = prompt:GetAttribute("Interactions")
+                                
+                                if not interactions then
+                                    task.spawn(function()
+                                        repeat task.wait(0.1)
+                                            if plr:DistanceFromCharacter(key.Position) <= 18 then
+                                                fireproximityprompt(prompt)
+                                            end
+                                        until prompt:GetAttribute("Interactions") or not flags.keyaura
+                                    end)
+                                end
+                            end
+                        elseif v.Name == "LeverForGate" then
+                            local prompt = v:WaitForChild("ActivateEventPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                                
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.Main.Position) <= 18 then
+                                            fireproximityprompt(prompt) 
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.keyaura
+                                end)
+                            end
+                        end 
+                    end
+                end
+        
+                local subaddcon
+                subaddcon = room.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(room:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.keyaura
+                    subaddcon:Disconnect() 
+                end)
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.keyaura
+            addconnect:Disconnect()
+        end
+    end,
+})
+
+local AutoLookBook = EasyCheatsTab:CreateToggle({
+    Name = "Book/Breaker Aura",
+    Info = "Pickup books or breakers nearby automatically.", -- Speaks for itself, Remove if none.
+    SectionParent = auralabel,
+    CurrentValue = false,
+    Flag = "bookaura",
+    Callback = function(Value)
+        flags.bookaura = Value
+    
+        if Value then
+            local function setup(room)
+                local function check(v)
+                    if v:IsA("Model") then
+                        if v.Name == "LiveHintBook" then
+                            local prompt = v:WaitForChild("ActivateEventPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.PrimaryPart.Position) <= 12 then
+                                            fireproximityprompt(prompt)
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.bookaura
+                                end)
+                            end
+                        elseif v.Name == "LiveBreakerPolePickup" then
+                            local prompt = v:WaitForChild("ActivateEventPrompt")
+                            local interactions = prompt:GetAttribute("Interactions")
+                                
+                            if not interactions then
+                                task.spawn(function()
+                                    repeat task.wait(0.1)
+                                        if plr:DistanceFromCharacter(v.PrimaryPart.Position) <= 12 then
+                                            fireproximityprompt(prompt) 
+                                        end
+                                    until prompt:GetAttribute("Interactions") or not flags.bookaura
+                                end)
+                            end
+                        end 
+                    end
+                end
+        
+                local subaddcon
+                subaddcon = room.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(room:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.bookaura
+                    subaddcon:Disconnect() 
+                end)
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.bookaura
+            addconnect:Disconnect()
+        end
+    end,
+})
+--esp
+
+
+local EspLabel = EasyCheatsTab:CreateSection("ESP")
+local VisualPara = EasyCheatsTab:CreateParagraph({Title = "ESP", Content = "ESP to view items/objects through walls."}, EspLabel)
+local doorESP = EasyCheatsTab:CreateToggle({
+    Name = "Door ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "doorESP",
+    Callback = function(Value)
+        flags.espdoors = Value
+        if Value then
+            local function setup(room)
+                local door = room:WaitForChild("Door"):WaitForChild("Door")
+                task.wait(0.1)
+                if game.Workspace.CurrentRooms:FindFirstChild(tostring(tonumber(room.Name)+1)) and door.Parent:GetAttribute("Opened") ~= true then
+                    local h = esp(door,configFlags.doorESP,door,(configFlags.advancedESP and "Door "..(game.Workspace.CurrentRooms[tostring(tonumber(room.Name)+1)].Name.." [" or "[")..(game.Workspace.CurrentRooms[tostring(tonumber(room.Name)+1)]:GetAttribute("OriginalName") or "RoomName Unknown").."]" or "Door"))
+                    table.insert(esptable.doors,h)
+                    
+                    
+                    door:WaitForChild("Open").Played:Connect(function()
+                        h.delete()
+                    end)
+                    
+                    door.AncestryChanged:Connect(function()
+                        h.delete()
+                    end)
+                end
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+                 for i,v in pairs(workspace.CurrentRooms:GetChildren()) do
+                    if v:FindFirstChild("Assets") then
+                        setup(v) 
+                    end
+                end
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.espdoors
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.doors) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local keyesp = EasyCheatsTab:CreateToggle({
+    Name = "Key / Lever ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "keyandleverESP",
+    Callback = function(Value)
+        flags.espkeys = Value
+    
+        if Value then
+            local function check(v)
+                if v:IsA("Model") and (v.Name == "LeverForGate" or v.Name == "KeyObtain") then
+                    task.wait(0.1)
+                    if v.Name == "KeyObtain" then
+                        local hitbox = v:WaitForChild("Hitbox")
+                        local parts = hitbox:GetChildren()
+                        table.remove(parts,table.find(parts,hitbox:WaitForChild("PromptHitbox")))
+                        
+                        local h = esp(parts,configFlags.keyESP,hitbox,"Key")
+                        table.insert(esptable.keys,h)
+                        
+                    elseif v.Name == "LeverForGate" then
+                        local h = esp(v,configFlags.keyESP,v.PrimaryPart,"Lever")
+                        table.insert(esptable.keys,h)
+                        
+                        v.PrimaryPart:WaitForChild("SoundToPlay").Played:Connect(function()
+                            h.delete()
+                        end) 
+                    end
+                end
+            end
+            
+            local function setup(room)
+                local assets = room:WaitForChild("Assets")
+                
+                assets.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                    
+                for i,v in pairs(assets:GetDescendants()) do
+                    check(v)
+                end 
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.espkeys
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.keys) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local itemesp = EasyCheatsTab:CreateToggle({
+    Name = "Item ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "itemESP",
+    Callback = function(Value)
+        flags.espitems = Value
+    
+        if Value then
+            local function check(v)
+                if v:IsA("Model") and (v:GetAttribute("Pickup") or v:GetAttribute("PropType")) then
+                    task.wait(0.1)
+                    
+                    local part = (v:FindFirstChild("Handle") or v:FindFirstChild("Prop"))
+                    local h = esp(part,configFlags.itemESP,part,v.Name)
+                    table.insert(esptable.items,h)
+                end
+            end
+            
+            local function setup(room)
+                local assets = room:WaitForChild("Assets")
+                
+                if assets then  
+                    local subaddcon
+                    subaddcon = assets.DescendantAdded:Connect(function(v)
+                        check(v) 
+                    end)
+                    
+                    for i,v in pairs(assets:GetDescendants()) do
+                        check(v)
+                    end
+                    
+                    task.spawn(function()
+                        repeat task.wait() until not flags.espitems
+                        subaddcon:Disconnect()  
+                    end) 
+                end 
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.espitems
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.items) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local bookandbreakerESP = EasyCheatsTab:CreateToggle({
+    Name = "Book / Breaker ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "bookESP",
+    Callback = function(Value)
+        flags.espbooks = Value
+    
+        if Value then
+            local function check(v)
+                if v:IsA("Model") and (v.Name == "LiveHintBook" or v.Name == "LiveBreakerPolePickup") then
+                    task.wait(0.1)
+                    
+                    local h = esp(v,configFlags.bookESP,v.PrimaryPart,(v.Name == "LiveBreakerPolePickup" and "Breaker" or "Book"))
+                    table.insert(esptable.books,h)
+                    
+                    v.AncestryChanged:Connect(function()
+                        if not v:IsDescendantOf(room) then
+                            h.delete() 
+                        end
+                    end)
+                end
+            end
+            
+            local function setup(room)
+                if room.Name == "50" or room.Name == "100" then
+                    room.DescendantAdded:Connect(function(v)
+                        check(v) 
+                    end)
+                    
+                    for i,v in pairs(room:GetDescendants()) do
+                        check(v)
+                    end
+                end
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                setup(room) 
+            end
+            
+            repeat task.wait() until not flags.espbooks
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.books) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local entityesp = EasyCheatsTab:CreateToggle({
+    Name = "Entity ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "entityESP",
+    Callback = function(Value)
+        flags.esprush = Value
+    
+        if Value then
+            local addconnect
+            addconnect = workspace.ChildAdded:Connect(function(v)
+                if table.find(entitynames,v.Name) then
+                    task.wait(0.1)
+                    
+                    local h = esp(v,configFlags.entityESP,v.PrimaryPart,v.Name:gsub("Moving",""))
+                    table.insert(esptable.entity,h)
+                end
+            end)
+            
+            local function setup(room)
+                if room.Name == "50" or room.Name == "100" then
+                    local figuresetup = room:WaitForChild("FigureSetup")
+                
+                    if figuresetup then
+                        local fig = figuresetup:WaitForChild("FigureRagdoll")
+                        task.wait(0.1)
+                        
+                        local h = esp(fig,Color3.fromRGB(255,25,25),fig.PrimaryPart,"Figure")
+                        table.insert(esptable.entity,h)
+                    end 
+                else
+                    local assets = room:WaitForChild("Assets")
+                    
+                    local function check(v)
+                        if v:IsA("Model") and table.find(entitynames,v.Name) then
+                            task.wait(0.1)
+                            
+                            local h = esp(v:WaitForChild("Base"),Color3.fromRGB(255,25,25),v.Base,"Snare")
+                            table.insert(esptable.entity,h)
+                        end
+                    end
+                    
+                    assets.DescendantAdded:Connect(function(v)
+                        check(v) 
+                    end)
+                    
+                    for i,v in pairs(assets:GetDescendants()) do
+                        check(v)
+                    end
+                end 
+            end
+            
+            local roomconnect
+            roomconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,v in pairs(workspace.CurrentRooms:GetChildren()) do
+                setup(v) 
+            end
+            
+            repeat task.wait() until not flags.esprush
+            addconnect:Disconnect()
+            roomconnect:Disconnect()
+            
+            for i,v in pairs(esptable.entity) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local lockerESP = EasyCheatsTab:CreateToggle({
+    Name = "Wardrobe ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "lockeresp",
+    Callback = function(Value)
+        flags.esplocker = Value
+    
+        if Value then
+            local function check(v)
+                if v:IsA("Model") then
+                    task.wait(0.1)
+                    if (v.Name == "Wardrobe" or v.Name == "Toolshed") then
+                        local h = esp(v.PrimaryPart,configFlags.lockerESP,v.PrimaryPart,"Wardrobe")
+                        table.insert(esptable.lockers,h) 
+                    elseif (v.Name == "Rooms_Locker" or v.Name == "Rooms_Locker_Fridge") then
+                        local h = esp(v.PrimaryPart,configFlags.lockerESP,v.PrimaryPart,"Locker")
+                        table.insert(esptable.lockers,h) 
+                    end
+                end
+            end
+            
+            local function setup(room)
+                local assets = room:WaitForChild("Assets")
+                
+                if assets then
+                    local subaddcon
+                    subaddcon = assets.DescendantAdded:Connect(function(v)
+                        check(v) 
+                    end)
+                    
+                    for i,v in pairs(assets:GetDescendants()) do
+                        check(v)
+                    end
+                    
+                    task.spawn(function()
+                        repeat task.wait() until not flags.esplocker
+                        subaddcon:Disconnect()  
+                    end) 
+                end 
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,v in pairs(workspace.CurrentRooms:GetChildren()) do
+                setup(v) 
+            end
+            
+            repeat task.wait() until not flags.esplocker
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.lockers) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local chestesp = EasyCheatsTab:CreateToggle({
+    Name = "Chest ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "chestESP",
+    Callback = function(Value)
+        flags.espchest = Value
+    
+        if Value then
+            local function check(v)
+                if v:IsA("Model") then
+                    task.wait(0.1)
+                    if v.Name == "ChestBox" then
+                        warn(v.Name)
+                        local h = esp(v,configFlags.chestESP,v.PrimaryPart,"Chest")
+                        table.insert(esptable.chests,h) 
+                    elseif v.Name == "ChestBoxLocked" then
+                        local h = esp(v,configFlags.lockedchestESP,v.PrimaryPart,"Locked Chest")
+                        table.insert(esptable.chests,h) 
+                    end
+                end
+            end
+            
+            local function setup(room)
+                local subaddcon
+                subaddcon = room.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(room:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.espchest
+                    subaddcon:Disconnect()  
+                end)  
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.espchest
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.chests) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local playeresp = EasyCheatsTab:CreateToggle({
+    Name = "Player ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "playerESP",
+    Callback = function(Value)
+        flags.esphumans = Value
+    
+        if Value then
+            local function personesp(v)
+                v.CharacterAdded:Connect(function(vc)
+                    local vh = vc:WaitForChild("Humanoid")
+                    local torso = vc:WaitForChild("UpperTorso")
+                    task.wait(0.1)
+                    
+                    local h = esp(vc,configFlags.playerESP,torso,v.DisplayName)
+                    table.insert(esptable.people,h) 
+                end)
+                
+                if v.Character then
+                    local vc = v.Character
+                    local vh = vc:WaitForChild("Humanoid")
+                    local torso = vc:WaitForChild("UpperTorso")
+                    task.wait(0.1)
+                    
+                    local h = esp(vc,configFlags.playerESP,torso,v.DisplayName)
+                    table.insert(esptable.people,h) 
+                end
+            end
+            
+            local addconnect
+            addconnect = game.Players.PlayerAdded:Connect(function(v)
+                if v ~= plr then
+                    personesp(v)
+                end
+            end)
+            
+            for i,v in pairs(game.Players:GetPlayers()) do
+                if v ~= plr then
+                    personesp(v) 
+                end
+            end
+            
+            repeat task.wait() until not flags.esphumans
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.people) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local goldpileESP = EasyCheatsTab:CreateToggle({
+    Name = "Gold Pile ESP",
+    SectionParent = EspLabel,
+    CurrentValue = false,
+    Flag = "goldpileesp",
+    Callback = function(Value)
+        flags.espgold = Value
+        
+        if Value then
+            local function check(v)
+                if v:IsA("Model") then
+                    task.wait(0.1)
+                    local goldvalue = v:GetAttribute("GoldValue")
+                    
+                    if goldvalue and goldvalue >= flags.goldespvalue then
+                        local hitbox = v:WaitForChild("Hitbox")
+                        local h = esp(hitbox:GetChildren(),configFlags.goldESP,hitbox,"GoldPile [".. tostring(goldvalue).."]")
+                        table.insert(esptable.gold,h)
+                    end
+                end
+            end
+            
+            local function setup(room)
+                local assets = room:WaitForChild("Assets")
+                
+                local subaddcon
+                subaddcon = assets.DescendantAdded:Connect(function(v)
+                    check(v) 
+                end)
+                
+                for i,v in pairs(assets:GetDescendants()) do
+                    check(v)
+                end
+                
+                task.spawn(function()
+                    repeat task.wait() until not flags.espchest
+                    subaddcon:Disconnect()  
+                end)  
+            end
+            
+            local addconnect
+            addconnect = workspace.CurrentRooms.ChildAdded:Connect(function(room)
+                setup(room)
+            end)
+            
+            for i,room in pairs(workspace.CurrentRooms:GetChildren()) do
+                if room:FindFirstChild("Assets") then
+                    setup(room) 
+                end
+            end
+            
+            repeat task.wait() until not flags.espgold
+            addconnect:Disconnect()
+            
+            for i,v in pairs(esptable.gold) do
+                v.delete()
+            end 
+        end
+    end,
+})
+local goldSlider = EasyCheatsTab:CreateSlider({
+    Name = "Minimum Gold Displayed",
+    SectionParent = EspLabel,
+    Range = {5, 100},
+    Increment = 5,
+    Suffix = "MinimumGold",
+    CurrentValue = 15,
+    Flag = "MinimumGoldFlag", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        flags.goldespvalue = Value
+    end,
+})
+-- end of esp
+
+--[[local anticheatLabel = EasyCheatsTab:CreateSection("Anti-Cheat")
+local bypassdesc = EasyCheatsTab:CreateParagraph({Title = "Bypass Anti-Cheat", Content = "bypass anticheat makes it so you CANT pick up ANYTHING so only do this in multiplayer or in the rooms area, if you use this you will not get the a-1000 badge."})
+local bypassenable = EasyCheatsTab:CreateButton({
+    Name = "Activate Anti-Cheat",
+    Callback = function()
+        local newhum = hum:Clone()
+        newhum.Name = "humlol"
+        newhum.Parent = char
+        task.wait()
+        hum.Parent = nil
+        hum = newhum
+    end,
+})]]
+
+-- Services
+
+function deleteSeekObjects(room)
+    local assets = room:WaitForChild("Assets")
+    for _,v in pairs(assets:GetChildren()) do
+        if v.Name == "ChandelierObstruction" then
+            if flags.noseeklights then
+                local touchRegister = v:WaitForChild("HurtPart"):WaitForChild("TouchInterest")
+                touchRegister:Destroy()
+            end
+        elseif v.Name == "Seek_Arm" then
+            if flags.noseekarms then
+                local touchRegister = v:WaitForChild("AnimatorPart"):WaitForChild("TouchInterest")
+                touchRegister:Destroy()
+            end
+        end
+    end
+end
+function deleteSnares(room)
+    if flags.nosnares then
+        local assets = room:WaitForChild("Assets")
+        for _,v in pairs(assets:GetChildren()) do
+            if v.Name == "Snare" then
+                local touchRegister = v:WaitForChild("Hitbox"):WaitForChild("TouchInterest")
+                touchRegister:Destroy()
+            end
+        end
+    end
+end
+game:GetService("ReplicatedStorage").GameData.LatestRoom.Changed:Connect(function()
+    if workspace.CurrentRooms[game:GetService("ReplicatedStorage").GameData.LatestRoom.Value]:GetAttribute("OriginalName") == "Hotel_SeekChaseFinal" then
+        task.wait(0.1)
+        deleteSeekObjects(workspace.CurrentRooms[game:GetService("ReplicatedStorage").GameData.LatestRoom.Value])
+    elseif game:GetService("ReplicatedStorage").GameData.LatestRoom.Value >= 90 then
+        deleteSnares(workspace.CurrentRooms[game:GetService("ReplicatedStorage").GameData.LatestRoom.Value])
+    end
+end)
+
+game:GetService("Lighting").Changed:Connect(function()
+    if fbmode == true then
+        game.Lighting.Ambient = Color3.fromRGB(255,255,255)
+    end
+end)
+game:GetService("ProximityPromptService").PromptButtonHoldBegan:Connect(function(prompt)
+    if not instanceInteraction then return end
+    if getgenv().HubConfig.InsecureMode == true then return end
+    fireproximityprompt(prompt)
+end)
+game:GetService("RunService").RenderStepped:Connect(function()
+    if not Char:FindFirstChild("HumanoidRootPart") then return end
+    Char.HumanoidRootPart.CanCollide = not isEnabled
+    Char.Collision.CanCollide = not isEnabled
+
+    local HrpCFrame = Char.HumanoidRootPart.CFrame
+
+    local ray = Ray.new(HrpCFrame.Position, HrpCFrame.LookVector * 0.5)
+    local part = workspace:FindPartOnRay(ray)
+    if part and part.CanCollide == true and isEnabled then
+        Char.HumanoidRootPart.Anchored = true
+        Char:PivotTo(Char.HumanoidRootPart.CFrame * CFrame.new(0, 1000, 0))
+        task.wait()
+        Char:PivotTo(Char.HumanoidRootPart.CFrame * CFrame.new(0, 0, -4))
+        task.wait()
+        Char:PivotTo(Char.HumanoidRootPart.CFrame * CFrame.new(0, -1000, 0))
+        task.wait(0.1)
+        Char.HumanoidRootPart.Anchored = false
+    end
+end)
+
+-- [[  Items  ]] --
+local ItemPara = OtherTab:CreateParagraph({Title = "Item Giver", Content = "Give client sided items, All just client sided visuals. Entity Harming only works on spawned entities."})
+local ItemLabel = OtherTab:CreateSection("Items")
+--local SkinsLabel = OtherTab:CreateSection("Skins")
+--local A90Label = OtherTab:CreateSection("A-90 Controller")
+if game.ReplicatedStorage:WaitForChild("GameData"):WaitForChild("Floor").Value == "Fools" then
+    local bananaGun = OtherTab:CreateButton({
+        Name = "Give Banana Gun",
+        SectionParent = ItemLabel,
+        Callback = function()
+            getgenv().BananaGunSettings = {
+                BananaSpeed = 100,
+                BananaAmount = 1
+            }
+            isnetworkowner = isnetworkowner or function() return true end
+            message("This script is made for Synapse X, feel free to keep using it if you want but it might break.", 10, "Executor Warning")
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/MasterOogway6147/Scripts/main/Doors/Kardin%20Hong/Banana%20Gun/Banana%20Gun.lua"))()
+        end,
+    })
+end
+local GunButton = OtherTab:CreateButton({
+	Name = "Give Gun",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: PenguinManiack#2322", 10, "Item Giver")
+        loadstring(game:HttpGet("https://github.com/CreepyPSC/dxrkhub/raw/main/doors-scripts/hub-features/item-gun.lua"))()
+	end,
+})
+local SCARButton = OtherTab:CreateButton({
+	Name = "Give SCAR-H",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: PenguinManiack#2322", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/CreepyPSC/dxrkhub/main/doors-scripts/hub-features/item-scarh.lua"))()
+	end,
+})
+local CrucifixButton = OtherTab:CreateButton({
+	Name = "Give Crucifix",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: PenguinManiack#2322", 10, "Item Giver")
+        _G.Uses = 1; -- how many uses can be done with the crucifix before it deletes
+        _G.Range = 30; -- the range of the crucifix, the higher number you set means the further you can reach objects with it.
+        _G.OnAnything = true; -- makes it so you can use it on objects, hold q and press an object to use. if you set this to false you'll only be able to use it on spawned entities not real ones.
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/PenguinManiack/Crucifix/main/Crucifix.lua'))()
+	end,
+})
+local lasergunbutton = OtherTab:CreateButton({
+	Name = "Give Laser-Gun",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: Luke3#5175", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/K0t1n/Public/main/Laser%20Gun"))()
+	end,
+})
+local ShearsButton = OtherTab:CreateButton({
+	Name = "Give Shears",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: PenguinManiack#2322", 10, "Item Giver")
+        loadstring(game:HttpGet("https://github.com/CreepyPSC/dxrkhub/raw/main/doors-scripts/hub-features/item-shears.lua"))()
+	end,
+})
+local INFVitaminsButton = OtherTab:CreateButton({
+	Name = "Give INF Vitamins",
+    SectionParent = ItemLabel,
+	Callback = function()
+        getgenv().CustomVitamins = {
+            SpeedBoost = 5,
+            EffectDuration = 25
+        }
+        message("This script is made by: Master Oogway#3595", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/CreepyPSC/dxrkhub/main/doors-scripts/hub-features/item-infvitamins"))()
+	end,
+})
+local VitaminsButton = OtherTab:CreateButton({
+	Name = "Give Vitamins",
+    SectionParent = ItemLabel,
+	Callback = function()
+        getgenv().CustomVitamins = {
+            SpeedBoost = 5,
+            EffectDuration = 25
+        }
+        message("This script is made by: Master Oogway#3595", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/CreepyPSC/dxrkhub/main/doors-scripts/hub-features/item-vitamins.lua"))()
+	end,
+})
+local ChocolateButton = OtherTab:CreateButton({
+	Name = "Give Chocolate",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: Luke3#5175", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/K0t1n/Public/main/Chocolate%20Bar%20Script"))()
+	end,
+})
+local IcecreamButton = OtherTab:CreateButton({
+	Name = "Give Icecream",
+    SectionParent = ItemLabel,
+	Callback = function()
+        getgenv().CustomIcecream = {
+            SpeedBoost = 5,
+            EffectDuration = 120
+        }
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/CreepyPSC/creepy-doors/main/icecream-source.lua'))()
+	end,
+})
+local StarbucksButton = OtherTab:CreateButton({
+	Name = "Give Coffee",
+    SectionParent = ItemLabel,
+	Callback = function()
+        getgenv().StarbucksConfig = {
+            SpeedBoost = 5;
+            EffectDuration = 40;
+            Uses = 3;
+        }
+        loadstring(game:HttpGet('https://github.com/CreepyPSC/dxrkhub/raw/main/doors-scripts/hub-features/item-coffee.lua'))()
+	end,
+})
+local millionKnobCake = OtherTab:CreateButton({
+	Name = "Give 1-Million Knob Cake",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: PenguinManiack#2322", 10, "Item Giver")
+        local tool = game:GetObjects("rbxassetid://13175107839")[1]
+        tool.Parent = game.Players.LocalPlayer.Backpack
+        tool.Activated:Connect(function()
+            tool.Eat:play()
+            tool.Cake:Destroy()
+            task.wait(1)
+            tool.yay:Play()
+        end)
+	end,
+})
+local ShakelightButton = OtherTab:CreateButton({
+	Name = "Give Shakelight",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: DxrkHub", 10, "Item Giver")
+        loadstring(game:HttpGet('https://github.com/CreepyPSC/dxrkhub/raw/main/doors-scripts/hub-features/item-shakelight.lua'))()
+	end,
+})
+local ScannerButton = OtherTab:CreateButton({
+	Name = "Give Scanner",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: Deivid#5444", 10, "Item Giver")
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/DeividComSono/Scripts/main/Scanner.lua'))()
+	end,
+})
+local MaxwellPlushie = OtherTab:CreateButton({
+	Name = "Give Maxwell Plushie",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: Luke3#5175", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/K0t1n/Public/main/Maxwell%20Plushie"))()
+	end,
+})
+local PenguinManiackPlushie = OtherTab:CreateButton({
+	Name = "Give PenguinManiack Plushie",
+    SectionParent = ItemLabel,
+	Callback = function()
+        message("This script is made by: Luke3#5175", 10, "Item Giver")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/K0t1n/Public/main/PenguinManiack%20Plushie"))()
+	end,
+})
+
+-- [[ Farming ]] --
+local DeathFarmingNotif = AutoFarmingTab:CreateParagraph({Title = "Farming", Content = "All farmers made for doors, Quickly grind up statistics to make it look like your a pro."})
+local FarmingLabel = AutoFarmingTab:CreateSection("Death Farmer")
+local DeathFarmingNotif = AutoFarmingTab:CreateParagraph({Title = "Death Farmer", Content = "Use this Death Farmer to AFK grind deaths, Please have 1 revive before starting. Go to DOOR 100 with 4 alts in the server & use the farmer for knobs."}, FarmingLabel)
+local DeathFarming = AutoFarmingTab:CreateButton({
+	Name = "Start Death Auto-Farm",
+    SectionParent = FarmingLabel,
+	Callback = function()
+        message("Made by Luke3#5175, Zephyr#0002 and upio#7408", 10, "Death Farmer")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/K0t1n/Public/main/Doors%20Death%20Farmer"))() 
+	end,
+})
+
+
+-- [[  Misc  ]] --
+local EventsLabel = EventTab:CreateSection("Events")
+local HeartbeatButton = EventTab:CreateButton({
+    Name = "Heartbeat Minigame",
+    SectionParent = EventsLabel,
+    Callback = function()
+        firesignal(game.ReplicatedStorage.EntityInfo.ClutchHeartbeat.OnClientEvent)
+    end,
+})
+local AchievementsButton = EventTab:CreateButton({
+    Name = "Grant All Achievements",
+    SectionParent = EventsLabel,
+    Callback = function()
+        for i,v in pairs(require(game.ReplicatedStorage.Achievements)) do
+            spawn(function()
+                require(game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game.RemoteListener.Modules.AchievementUnlock)(nil, i)
+            end)
+        end
+    end,
+})
+local SeekEyesButton = EventTab:CreateButton({
+	Name = "Seek Eyes",
+    SectionParent = EventsLabel,
+	Callback = function()
+        require(game.ReplicatedStorage.ClientModules.EntityModules.Seek).tease(nil, workspace.CurrentRooms[game.Players.LocalPlayer:GetAttribute("CurrentRoom")], 100)
+	end,
+})
+local Input = EventTab:CreateInput({
+	Name = "Caption",
+    SectionParent = EventsLabel,
+	PlaceholderText = "Your text here",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(Text)
+        firesignal(game.ReplicatedStorage.EntityInfo.Caption.OnClientEvent, Text)
+	end,
+})
+local MatchmakingLabel = EventTab:CreateSection("Matchmaking Events")
+local ReturnLobbyButton = EventTab:CreateButton({
+    Name = "Return to Lobby",
+    SectionParent = MatchmakingLabel,
+    Callback = function()
+        game.ReplicatedStorage.EntityInfo.Lobby:FireServer()
+    end,
+})
+local StartNewMatchButton = EventTab:CreateButton({
+    Name = "Start new Match",
+    SectionParent = MatchmakingLabel,
+    Callback = function()
+        game.ReplicatedStorage.EntityInfo.PlayAgain:FireServer()
+    end,
+})
+local EndCurrentMatchButton = EventTab:CreateButton({
+    Name = "End On-going Match",
+    SectionParent = MatchmakingLabel,
+    Callback = function()
+        game.Players.LocalPlayer.Character.Humanoid.Health = 0;
+        if game.Players.LocalPlayer.Character.Humanoid.Health <= 0 then
+            game:GetService("ReplicatedStorage").GameStats["Player_" .. game.Players.LocalPlayer.Name].Total.DeathCause.Value = "Match Ended"
+            debug.setupvalue(
+                getconnections(game:GetService("ReplicatedStorage").EntityInfo.DeathHint.OnClientEvent)[1].Function,
+                1,
+                {
+                    "You ended your match...",
+                    "- dxrkhub on top"
+                },
+                "Blue"
+            )
+        end
+    end,
+})
+
+-- [[  Credits  ]] --
+local CreditParagraph = CreditsTab:CreateParagraph({
+    Title = "Credits", 
+    Content = "Credits on Github: https://github.com/CreepyPSC/dxrkhub",
+}, CreditLabel)
+
+-- [[  Other Guis  ]] --
+local OtherLabel = CreditsTab:CreateSection("GUIs")
+local MSDoors = CreditsTab:CreateButton({
+	Name = "MSDoors",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet(("https://raw.githubusercontent.com/mstudio45/MSDOORS/main/MSDOORS.lua"),true))()
+	end,
+})
+local VynixuDoorsButton = CreditsTab:CreateButton({
+	Name = "Vynixu's Doors GUI",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Vynixius/main/Doors/Script.lua"))()
+	end,
+})
+local DarkraiXButton = CreditsTab:CreateButton({
+	Name = "Darkrai X",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/GamingScripter/Darkrai-X/main/Games/Doors"))()
+	end,
+})
+local PlamenUtilButton = CreditsTab:CreateButton({
+	Name = "Plamen6789's Utilities GUI",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/plamen6789/UtilitiesHub/main/UtilitiesGUI'))()
+	end,
+})
+local InfiniteYieldButton = CreditsTab:CreateButton({
+	Name = "Infinite Yield",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+	end,
+})
+local RemoteSpyButton = CreditsTab:CreateButton({
+	Name = "Remote Spy",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet("https://pastebin.com/raw/bCghX33W", true))()
+	end,
+})
+local DarkDexButton = CreditsTab:CreateButton({
+	Name = "Dark Dex",
+    SectionParent = OtherLabel,
+	Callback = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
+	end,
+})
+
+local ConfigSection1 = ConfigTab:CreateSection("ESP Configs")
+local unlockMouseConfig = ConfigTab:CreateToggle({
+    Name = "Advanced Door ESP",
+    Info = "Show full ESP Details on Doors", -- Speaks for itself, Remove if none.
+    SectionParent = ConfigSection1,
+    CurrentValue = false,
+    Flag = "advancedDoors",
+    Callback = function(Value)
+        configFlags.advancedESP = Value
+    end,
+})
+local doorespcolor = ConfigTab:CreateColorPicker({
+    Name = "Door ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.doorESP,
+    Flag = "doorespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.doorESP = Value
+    end
+})
+local goldespcolor = ConfigTab:CreateColorPicker({
+    Name = "Gold ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.goldESP,
+    Flag = "goldespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.goldESP = Value
+    end
+})
+local keyespcolor = ConfigTab:CreateColorPicker({
+    Name = "Key ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.keyESP,
+    Flag = "keyespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.keyESP = Value
+    end
+})
+local bookespcolor = ConfigTab:CreateColorPicker({
+    Name = "Book ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.keyESP,
+    Flag = "bookespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.bookESP = Value
+    end
+})
+local itemespcolor = ConfigTab:CreateColorPicker({
+    Name = "Item ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.itemESP,
+    Flag = "itemespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.itemESP = Value
+    end
+})
+local entityESPcolor = ConfigTab:CreateColorPicker({
+    Name = "Entity ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.entityESP,
+    Flag = "entityespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.entityESP = Value
+    end
+})
+local chestESPcolor = ConfigTab:CreateColorPicker({
+    Name = "Chest ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.chestESP,
+    Flag = "chestespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.chestESP = Value
+    end
+})
+local lockedChestESPcolor = ConfigTab:CreateColorPicker({
+    Name = "Locked Chest ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.lockedchestESP,
+    Flag = "lockedchestespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.lockedchestESP = Value
+    end
+})
+local lockerespcolor = ConfigTab:CreateColorPicker({
+    Name = "Wardrobe ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.lockerESP,
+    Flag = "lockerespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.lockerESP = Value
+    end
+})
+local playerespcolor = ConfigTab:CreateColorPicker({
+    Name = "Player ESP Color",
+    SectionParent = ConfigSection1,
+    Color = configFlags.playerESP,
+    Flag = "playerespcolor", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+    Callback = function(Value)
+        configFlags.playerESP = Value
+    end
+})
+
+
+Rayfield:LoadConfiguration()
